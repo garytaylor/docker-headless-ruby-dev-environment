@@ -1,4 +1,4 @@
-FROM debian:jessie
+FROM ubuntu:16.04
 MAINTAINER JS Minet
 
 ENV DEBIAN_FRONTEND=noninteractive
