@@ -1,67 +1,28 @@
-# This Dockerfile is used to build an headles vnc image based on Ubuntu
+FROM debian:jessie
+MAINTAINER JS Minet
 
-FROM ubuntu:16.04
+ENV DEBIAN_FRONTEND=noninteractive
+ENV NOMACHINE_PACKAGE_NAME nomachine_5.1.62_1_amd64.deb
+ENV NOMACHINE_MD5 218372fe3591a8d91432aa1c8d6f118a
+ENV BUILD_PACKAGES="curl cups mate-desktop-environment-core pulseaudio ssh vim xterm"
 
-MAINTAINER Tobias Schneck "tobias.schneck@consol.de"
-ENV REFRESHED_AT 2017-02-14
-
-LABEL io.k8s.description="Headless VNC Container with Xfce window manager, firefox and chromium" \
-      io.k8s.display-name="Headless VNC Container based on Ubuntu" \
-      io.openshift.expose-services="6901:http,5901:xvnc" \
-      io.openshift.tags="vnc, ubuntu, xfce" \
-      io.openshift.non-scalable=true
-
-## Connection ports for controlling the UI:
-# VNC port:5901
-# noVNC webport, connect via http://IP:6901/?password=vncpassword
-ENV DISPLAY :1
-ENV VNC_PORT 5901
-ENV NO_VNC_PORT 6901
-EXPOSE $VNC_PORT $NO_VNC_PORT
-
-ENV HOME /headless
-ENV STARTUPDIR /dockerstartup
-WORKDIR $HOME
-
-### Envrionment config
-ENV DEBIAN_FRONTEND noninteractive
-ENV NO_VNC_HOME $HOME/noVNC
-ENV VNC_COL_DEPTH 24
-ENV VNC_RESOLUTION 1280x1024
-ENV VNC_PW vncpassword
+RUN apt-get update && apt-get install -y $BUILD_PACKAGES \
+&& rm -rf /var/lib/apt/lists/*
 
 ADD nxserver.sh /
 
-### Add all install scripts for further steps
-ENV INST_SCRIPTS $HOME/install
-ADD ./src/common/install/ $INST_SCRIPTS/
-ADD ./src/ubuntu/install/ $INST_SCRIPTS/
-RUN find $INST_SCRIPTS -name '*.sh' -exec chmod a+x {} +
+RUN curl -fSL "http://download.nomachine.com/download/5.1/Linux/${NOMACHINE_PACKAGE_NAME}" -o nomachine.deb \
+&& echo "${NOMACHINE_MD5} *nomachine.deb" | md5sum -c - \
+&& dpkg -i nomachine.deb \
+&& groupadd -r nomachine -g 433 \
+&& useradd -u 431 -r -g nomachine -d /home/nomachine -s /bin/bash -c "NoMachine" nomachine \
+&& mkdir /home/nomachine \
+&& chown -R nomachine:nomachine /home/nomachine \
+&& echo 'nomachine:nomachine' | chpasswd \
+&& rm -f nomachine.deb \
+&& service ssh start \
+&& chmod +x /nxserver.sh
 
-### Install some common tools
-RUN $INST_SCRIPTS/tools.sh
+ENTRYPOINT ["/nxserver.sh"]
 
-### Install xvnc-server & noVNC - HTML5 based VNC viewer
-RUN $INST_SCRIPTS/tigervnc.sh
-RUN $INST_SCRIPTS/no_vnc.sh
-
-### Install nomachine
-RUN $INST_SCRIPTS/nomachine.sh
-
-### Install firfox and chrome browser
-RUN $INST_SCRIPTS/firefox.sh
-RUN $INST_SCRIPTS/chrome.sh
-
-### Install xfce UI
-RUN $INST_SCRIPTS/xfce_ui.sh
-ADD ./src/common/xfce/ $HOME/
-
-### configure startup
-RUN $INST_SCRIPTS/libnss_wrapper.sh
-ADD ./src/common/scripts $STARTUPDIR
-RUN $INST_SCRIPTS/set_user_permission.sh $STARTUPDIR $HOME
-
-USER 1984
-
-ENTRYPOINT ["/dockerstartup/vnc_startup.sh"]
-CMD ["--tail-log"]
+EXPOSE 22 4000
