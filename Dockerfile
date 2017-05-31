@@ -22,7 +22,7 @@ RUN curl -fSL "http://download.nomachine.com/download/5.2/Linux/${NOMACHINE_PACK
 && service ssh start \
 && chmod +x /nxserver.sh
 
-RUN echo 'host:host' | chpasswd
+RUN echo 'root:host12345' | chpasswd
 
 
 ENTRYPOINT ["/nxserver.sh"]
