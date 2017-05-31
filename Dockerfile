@@ -22,11 +22,7 @@ RUN curl -fSL "http://download.nomachine.com/download/5.2/Linux/${NOMACHINE_PACK
 && service ssh start \
 && chmod +x /nxserver.sh
 
-RUN groupadd -r host -g 1000 \
-&& useradd -u 1000 -r -g host -d /home/host -s /bin/bash -c "Host" host \
-&& mkdir /home/host \
-&& chown -R host:host /home/host \
-&& echo 'host:host' | chpasswd \
+RUN echo 'host:host' | chpasswd
 
 
 ENTRYPOINT ["/nxserver.sh"]
