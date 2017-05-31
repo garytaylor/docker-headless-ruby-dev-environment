@@ -30,6 +30,8 @@ ENV VNC_COL_DEPTH 24
 ENV VNC_RESOLUTION 1280x1024
 ENV VNC_PW vncpassword
 
+ADD nxserver.sh /
+
 ### Add all install scripts for further steps
 ENV INST_SCRIPTS $HOME/install
 ADD ./src/common/install/ $INST_SCRIPTS/
