@@ -23,6 +23,8 @@ RUN curl -fSL "http://download.nomachine.com/download/5.2/Linux/${NOMACHINE_PACK
 && chmod +x /nxserver.sh
 
 RUN echo 'root:host12345' | chpasswd
+RUN mkdir -p /root/bin
+WORKDIR /root/bin
 
 RUN wget https://download.jetbrains.com/ruby/RubyMine-2017.1.3.tar.gz \
 && tar -xvzf RubyMine-2017.1.3.tar.gz \
